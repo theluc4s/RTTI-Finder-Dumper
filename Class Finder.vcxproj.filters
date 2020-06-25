@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Finder">
+      <UniqueIdentifier>{83cfc0af-2d2f-4f02-9db0-621554f26671}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Finder\finder.cpp">
+      <Filter>Finder</Filter>
+    </ClCompile>
+    <ClCompile Include="Finder\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Finder\finder.hpp">
+      <Filter>Finder</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
