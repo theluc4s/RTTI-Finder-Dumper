@@ -9,7 +9,7 @@
     <ClCompile Include="Finder\finder.cpp">
       <Filter>Finder</Filter>
     </ClCompile>
-    <ClCompile Include="Finder\main.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Finder\finder.hpp">
