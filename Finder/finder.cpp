@@ -1,70 +1,111 @@
 #include "finder.hpp"
 
-void Finder::add( const ulong_t pointer, const std::string name, const ulong_t reference )
+#include <algorithm>	//std::find
+#include <fstream>      //std::ofstream
+
+short Finder::find_ptr( const uint32_t something )
 {
-    int index{ find_ptr( pointer ) };
+	const auto found{ std::find( this->m_pointer.begin(),
+								 this->m_pointer.end(),
+								 something ) };
 
-    if ( index != m_invalid_index )
-    {
-        this->m_reference.at( index ).push_back( reference );
-        return;
-    }
-
-    this->m_pointer.push_back   ( pointer );
-    this->m_name.push_back      ( name );
-    this->m_reference.push_back ( { reference } );
+	return ( found != this->m_pointer.end() ? static_cast< short >( std::distance( this->m_pointer.begin(), found ) ) : -1 );
 }
 
-int Finder::find_ptr( const ulong_t pointer )
+void Finder::add( Info info )
 {
-    const auto found{ std::find( this->m_pointer.begin(), this->m_pointer.end(), pointer ) };
+	short pos{ find_ptr( info.m_ptr ) };
 
-    return ( found != this->m_pointer.end() ? static_cast< int >( std::distance( this->m_pointer.begin(), found ) ) : m_invalid_index );
+	if( pos != -1 )
+	{
+		this->m_pointer_instance.at( pos ).push_back( info.m_ptr_inst );
+		this->m_reference.at( pos ).push_back( info.m_ref );
+		this->m_assembly_inf.at( pos ).push_back( info.m_asm_inf );
+		return;
+	}
+
+	this->m_pointer.push_back( info.m_ptr );
+	this->m_pointer_instance.push_back( { info.m_ptr_inst } );
+
+	this->m_name.push_back( info.m_name );
+
+	this->m_reference.push_back( { info.m_ref } );
+	this->m_assembly_inf.push_back( { info.m_asm_inf } );
 }
 
 bool Finder::save()
 {
-    std::ofstream file{};
-    file.open( m_path, std::ios::trunc );
+	std::ofstream file{};
+	file.open( m_path, std::ios::trunc );
 
-    if ( file.is_open() )
-    {
-        file << *this;
+	if( file.is_open() && m_pointer.size() )
+	{
+		file << *this;
 
-        file.close();
+		file.close();
 
-        return true;
-    }
+		return true;
+	}
 
-    return false;
+	return false;
 }
 
-std::ostream& operator<<( std::ostream& out, const Finder& finder )
+std::ostream& operator<<( std::ostream &out, const Finder &finder )
 {
-    out << std::hex;
+	const size_t list_count{ finder.m_pointer.size() };
 
-    size_t ptr_size{ finder.m_pointer.size() };
+	if( !list_count )
+		return out << "No information found.";
 
-    for ( size_t index{ 0 }; index < ptr_size; ++index )
-    {
-        out << "m_pointer:    " << finder.m_pointer.at( index ) << '\n';
-        out << "m_name:       " << finder.m_name.at( index ) << '\n';
-        out << "m_references: [ ";
+	out << std::hex;
 
-        size_t ref_size{ finder.m_reference.at( index ).size() };
+	out << "Class Finder Dumper by luc4s!!!\n\n";
 
-        for ( size_t sub_index{ 0 }; sub_index < ref_size; ++sub_index )
-        {
-            out << finder.m_reference.at( index ).at( sub_index );
-            if ( ( sub_index + 1 ) != ref_size )
-                out << ',';
-        }
+	out << "-------------------------------------------------------\n";
 
-        out << " ]\n";
-        out << "------------------------\n";
-    };
+	out << "Process:     \t" << finder.m_process_info	.at( finder.m_selected_process ).m_name.data()	<< '\n';
+	out << "Module:      \t" << finder.m_modules		.at( finder.m_selected_module  ).m_name.data()	<< '\n';
+	out << "Base address:\t" << finder.m_modules		.at( finder.m_selected_module  ).m_base_address	<< '\n';
+	out << "Base size:   \t" << finder.m_modules		.at( finder.m_selected_module  ).m_size			<< '\n';
 
-    out << std::dec;
+	out << "-------------------------------------------------------\n\n";
 
-    return out;
+	for( size_t index{ 0 }; index < list_count; ++index )
+	{
+		out << "Class pointer:   \t" << finder.m_pointer		  .at( index ) << '\n';
+
+		out << "Class name:      \t" << finder.m_name.at( index ) << '\n';
+
+		out << "Pointer instance\n";
+
+		out << "{\n";
+
+		const size_t inst_count{ finder.m_pointer_instance.at( index ).size() };
+
+		for( size_t item{ 0 }; item < inst_count; ++item )
+		{
+			out << '\t' << finder.m_pointer_instance.at( index ).at( item );
+			out << '\t' << "Pointer to instance of " << finder.m_name.at( index ) << '\n';
+		}
+
+		out << "}\n";
+
+		out << "Memory references\n";
+
+		out << "{\n";
+
+		const size_t ref_count{ finder.m_reference.at( index ).size() };
+
+		for( size_t item{ 0 }; item < ref_count; ++item )
+		{
+			out << '\t' << finder.m_reference	.at( index ).at( item ) << '\t';
+			out << '\t' << finder.m_assembly_inf.at( index ).at( item ) << '\n';
+		}
+
+		out << "}\n";
+
+		out << "_______________________________________________________\n";
+	};
+
+	return out;
 }

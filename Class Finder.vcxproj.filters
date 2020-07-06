@@ -4,16 +4,105 @@
     <Filter Include="Finder">
       <UniqueIdentifier>{83cfc0af-2d2f-4f02-9db0-621554f26671}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Memory">
+      <UniqueIdentifier>{5150402b-022a-4d9e-8bf0-d60815ae40b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PE">
+      <UniqueIdentifier>{2fd2466c-1826-43f8-a7aa-7dd9a7ef519d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RTTI">
+      <UniqueIdentifier>{03e64729-c4d9-4dcf-81a8-51968e55a387}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graphics">
+      <UniqueIdentifier>{01196d69-01d0-45da-b526-afb728898ddd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Graphics\imgui">
+      <UniqueIdentifier>{c652ab92-2f4c-493f-89c2-fa741f235651}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Interface">
+      <UniqueIdentifier>{4eda8d2f-5961-4087-a838-fd8244dbcb06}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Finder\finder.cpp">
       <Filter>Finder</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Memory\memory.cpp">
+      <Filter>Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="PE\pe_format.cpp">
+      <Filter>PE</Filter>
+    </ClCompile>
+    <ClCompile Include="RTTI\rtti.cpp">
+      <Filter>RTTI</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\ImGui\imgui.cpp">
+      <Filter>Graphics\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\ImGui\imgui_demo.cpp">
+      <Filter>Graphics\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\ImGui\imgui_draw.cpp">
+      <Filter>Graphics\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\ImGui\imgui_impl_dx9.cpp">
+      <Filter>Graphics\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\ImGui\imgui_impl_win32.cpp">
+      <Filter>Graphics\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\ImGui\imgui_widgets.cpp">
+      <Filter>Graphics\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Interface\Interface.cpp">
+      <Filter>Interface</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Finder\finder.hpp">
       <Filter>Finder</Filter>
     </ClInclude>
+    <ClInclude Include="Memory\memory.hpp">
+      <Filter>Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="nmd_assembly.h" />
+    <ClInclude Include="PE\pe_format.hpp">
+      <Filter>PE</Filter>
+    </ClInclude>
+    <ClInclude Include="RTTI\rtti.hpp">
+      <Filter>RTTI</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\implementation.hpp">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\ImGui\imconfig.h">
+      <Filter>Graphics\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\ImGui\imgui.h">
+      <Filter>Graphics\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\ImGui\imgui_impl_dx9.h">
+      <Filter>Graphics\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\ImGui\imgui_impl_win32.h">
+      <Filter>Graphics\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\ImGui\imgui_internal.h">
+      <Filter>Graphics\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\ImGui\imstb_rectpack.h">
+      <Filter>Graphics\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\ImGui\imstb_textedit.h">
+      <Filter>Graphics\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\ImGui\imstb_truetype.h">
+      <Filter>Graphics\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\Interface.hpp">
+      <Filter>Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="Interface\ImHelper.hpp" />
   </ItemGroup>
 </Project>
