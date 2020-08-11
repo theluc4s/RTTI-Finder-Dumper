@@ -1,5 +1,7 @@
 # Class Finder Dumper
  Pointer search for any classes using the RTTI feature.
+ 
+[![](https://img.shields.io/github/license/theluc4s/Class-Finder-Dumper.svg)](LICENSE)
 
 ## Design goals
 A tool to facilitate the collection and visualization of the RTTI resource.
