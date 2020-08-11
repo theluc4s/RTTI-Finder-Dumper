@@ -23,8 +23,8 @@ int CALLBACK WinMain(
 		wnd->start_window();
 	}
 
-	auto finterface { std::make_unique< FinderInterface		>() };
-	auto ins        { std::make_unique< NMD_X86Instruction	>() };
+	auto finterface { std::make_unique< FinderInterface     >() };
+	auto ins        { std::make_unique< NMD_X86Instruction  >() };
 
 	while( wnd->get_msg().message != WM_QUIT )
 	{
