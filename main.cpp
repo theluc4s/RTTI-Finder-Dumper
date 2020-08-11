@@ -6,7 +6,7 @@
 
 #include "Interface/Interface.hpp"
 
-#include <memory>	//std::unique
+#include <memory>
 
 int CALLBACK WinMain(
 	_In_ HINSTANCE,
@@ -23,8 +23,8 @@ int CALLBACK WinMain(
 		wnd->start_window();
 	}
 
-	auto finterface	{ std::make_unique< FinderInterface		>() };
-	auto ins		{ std::make_unique< NMD_X86Instruction	>() };
+	auto finterface { std::make_unique< FinderInterface		>() };
+	auto ins        { std::make_unique< NMD_X86Instruction	>() };
 
 	while( wnd->get_msg().message != WM_QUIT )
 	{
@@ -37,10 +37,10 @@ int CALLBACK WinMain(
 
 		wnd->start_frame();
 
-		finterface->show( wnd->get_name(),										//Window name
-						{ static_cast< float >( g_d3dpp.BackBufferWidth  ),		//Window width
-						  static_cast< float >( g_d3dpp.BackBufferHeight ) },	//Window height
-						  ins.get() );											//Pointer NMD_X86Instructioon
+		finterface->show( wnd->get_name(),
+						{ static_cast< float >( g_d3dpp.BackBufferWidth  ),
+						  static_cast< float >( g_d3dpp.BackBufferHeight ) },
+						  ins.get() );
 
 		wnd->end_frame();
 

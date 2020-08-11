@@ -11,19 +11,19 @@ protected:
 	/// <summary>
 	/// Stores the class pointer
 	/// </summary>
-	std::vector< uint32_t > m_pointer;
+	std::vector< uint32_t >                   m_pointer;
 	/// <summary>
 	/// Used if there is only one class instance
 	/// </summary>
-	std::vector< std::vector< uint32_t > > m_pointer_instance;
+	std::vector< std::vector< uint32_t > >    m_pointer_instance;
 	/// <summary>
 	/// Stores the class name and its hierarchy
 	/// </summary>
-	std::vector< std::string > m_name;
+	std::vector< std::string >                m_name;
 	/// <summary>
 	/// Stores the local address for each class pointer or pointer to instance of class.
 	/// </summary>
-	std::vector< std::vector< uint32_t > > m_reference;
+	std::vector< std::vector< uint32_t > >    m_reference;
 	/// <summary>
 	/// Stores the assembly of the address contained in a references.
 	/// </summary>
@@ -31,17 +31,17 @@ protected:
 	/// <summary>
 	/// Location where the log will be stored
 	/// </summary>
-	std::string m_path;
+	std::string                               m_path;
 
 	/// <summary>
 	/// Temporary information to fill the vectors with information from the new found class or reference.
 	/// </summary>
 	struct Info
 	{
-		uint32_t m_pointer;
-		uint32_t m_pointer_instance;
+		uint32_t    m_pointer;
+		uint32_t    m_pointer_instance;
 		std::string m_name;
-		uint32_t m_reference;
+		uint32_t    m_reference;
 		std::string m_assembly_inf;
 
 		Info( const uint32_t pointer, const uint32_t pointer_instance, const std::string name, const uint32_t reference, const std::string assembly_inf ) :

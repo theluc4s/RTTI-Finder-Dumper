@@ -399,11 +399,11 @@ bool FinderInterface::init()
 
 void FinderInterface::start_scan( NMD_X86Instruction *instruction )
 {
-	m_pointer			.clear();
-	m_name				.clear();
-	m_pointer_instance	.clear();
-	m_reference			.clear();
-	m_assembly_inf		.clear();
+	m_pointer          .clear();
+	m_name             .clear();
+	m_pointer_instance .clear();
+	m_reference        .clear();
+	m_assembly_inf     .clear();
 
 	if( !read_buffer() )
 	{
@@ -488,20 +488,20 @@ void FinderInterface::start_scan( NMD_X86Instruction *instruction )
 
 void FinderInterface::clear()
 {
-	m_selected_module	= -1;
+	m_selected_module   = -1;
 
-	m_modules			.clear();
+	m_modules           .clear();
 
-	m_pointer			.clear();
-	m_name				.clear();
-	m_pointer_instance	.clear();
-	m_reference			.clear();
-	m_assembly_inf		.clear();
+	m_pointer           .clear();
+	m_name              .clear();
+	m_pointer_instance  .clear();
+	m_reference         .clear();
+	m_assembly_inf      .clear();
 
-	m_section_text		.clear();
-	m_buffer			.clear();
+	m_section_text      .clear();
+	m_buffer            .clear();
 
-	m_rtti_cache		.clear();
+	m_rtti_cache        .clear();
 }
 
 void FinderInterface::show( const std::string &title, const ImVec2 &wnd_size, NMD_X86Instruction *instruction )

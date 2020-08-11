@@ -1,8 +1,8 @@
 #pragma once
 #include "..\Graphics\imgui\imgui.h"
 
-#include <initializer_list>	//std::initializer_list
-#include <string>			//std::string
+#include <initializer_list>
+#include <string>
 
 namespace ImHelper
 {

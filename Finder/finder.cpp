@@ -1,13 +1,13 @@
 #include "finder.hpp"
 
-#include <algorithm>	//std::find
-#include <fstream>		//std::ofstream
+#include <algorithm>
+#include <fstream>
 
 const short Finder::find_ptr( const uint32_t pointer ) const
 {
 	const auto found{ std::find( this->m_pointer.begin(),
-								 this->m_pointer.end(),
-								 pointer ) };
+                                 this->m_pointer.end(),
+                                 pointer ) };
 
 	return ( found != this->m_pointer.end() ? static_cast< short >( std::distance( this->m_pointer.begin(), found ) ) : -1 );
 }
@@ -19,18 +19,18 @@ void Finder::add( const Info class_info )
 	if( pos != -1 )
 	{
 		this->m_pointer_instance .at( pos ).push_back( class_info.m_pointer_instance );
-		this->m_reference		 .at( pos ).push_back( class_info.m_reference );
-		this->m_assembly_inf	 .at( pos ).push_back( class_info.m_assembly_inf );
+		this->m_reference        .at( pos ).push_back( class_info.m_reference );
+		this->m_assembly_inf     .at( pos ).push_back( class_info.m_assembly_inf );
 		return;
 	}
 
-	this->m_pointer				 .push_back( class_info.m_pointer );
-	this->m_pointer_instance	 .push_back( { class_info.m_pointer_instance } );
+	this->m_pointer          .push_back( class_info.m_pointer );
+	this->m_pointer_instance .push_back( { class_info.m_pointer_instance } );
 
-	this->m_name				 .push_back( class_info.m_name );
+	this->m_name             .push_back( class_info.m_name );
 
-	this->m_reference			 .push_back( { class_info.m_reference } );
-	this->m_assembly_inf		 .push_back( { class_info.m_assembly_inf } );
+	this->m_reference        .push_back( { class_info.m_reference } );
+	this->m_assembly_inf     .push_back( { class_info.m_assembly_inf } );
 }
 
 bool Finder::save()
@@ -66,10 +66,10 @@ std::ostream& operator<<( std::ostream &out, const Finder &finder )
 
 	out << "######################################################################\n";
 
-	out << "Process:     \t" << finder.m_process_info	.at( finder.m_selected_process ).m_name.data()	<< '\n';
-	out << "Module:      \t" << finder.m_modules		.at( finder.m_selected_module  ).m_name.data()	<< '\n';
-	out << "Base address:\t" << finder.m_modules		.at( finder.m_selected_module  ).m_base_address	<< '\n';
-	out << "Base size:   \t" << finder.m_modules		.at( finder.m_selected_module  ).m_size			<< '\n';
+	out << "Process:     \t" << finder.m_process_info .at( finder.m_selected_process ).m_name.data()   << '\n';
+	out << "Module:      \t" << finder.m_modules      .at( finder.m_selected_module  ).m_name.data()   << '\n';
+	out << "Base address:\t" << finder.m_modules      .at( finder.m_selected_module  ).m_base_address  << '\n';
+	out << "Base size:   \t" << finder.m_modules      .at( finder.m_selected_module  ).m_size          << '\n';
 
 	out << "######################################################################\n\n";
 
@@ -77,15 +77,15 @@ std::ostream& operator<<( std::ostream &out, const Finder &finder )
 	{
 		out << "-------------------------- CLASS START HERE --------------------------\n";
 
-		out << "Class pointer:   \t" << finder.m_pointer	.at( index ) << '\n';
+		out << "Class pointer:   \t" << finder.m_pointer .at( index ) << '\n';
 
-		out << "Class name:      \t" << finder.m_name		.at( index ) << '\n';
+		out << "Class name:      \t" << finder.m_name    .at( index ) << '\n';
 
 		out << "Pointer instance\n";
 
 		out << "{\n";
 
-		const auto inst_count{ finder.m_pointer_instance	.at( index ).size() };
+		const auto inst_count{ finder.m_pointer_instance .at( index ).size() };
 
 		for( size_t item{ 0 }; item < inst_count; ++item )
 		{
@@ -103,8 +103,8 @@ std::ostream& operator<<( std::ostream &out, const Finder &finder )
 
 		for( size_t item{ 0 }; item < ref_count; ++item )
 		{
-			out << '\t' << finder.m_reference	.at( index ).at( item ) << '\t';
-			out << '\t' << finder.m_assembly_inf.at( index ).at( item ) << '\n';
+			out << '\t' << finder.m_reference    .at( index ).at( item ) << '\t';
+			out << '\t' << finder.m_assembly_inf .at( index ).at( item ) << '\n';
 		}
 
 		out << "}\n";

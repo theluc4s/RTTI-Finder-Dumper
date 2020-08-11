@@ -17,48 +17,48 @@
 
 struct TypeDescriptor
 {
-	unsigned long						hash;					// Hash value computed from type's decorated name
-	void								*spare;					// reserved, possible for RTTI
-	char								name[];					// The decorated name of the type; 0 terminated.
+	unsigned long                       hash;                  // Hash value computed from type's decorated name
+	void                                *spare;                // reserved, possible for RTTI
+	char                                name[];                // The decorated name of the type; 0 terminated.
 };
 
 struct PMD
 {
-	int									mdisp;					//member displacement
-	int									pdisp;					//vbtable displacement
-	int									vdisp;					//displacement inside vbtable
+	int                                 mdisp;                  //member displacement
+	int                                 pdisp;                  //vbtable displacement
+	int                                 vdisp;                  //displacement inside vbtable
 };
 
 struct RTTICompleteObjectLocator
 {
-	unsigned long						signature;				//always zero ?
-	unsigned long						offset;					//offset of this vtable in the complete class
-	unsigned long						cd_offset;				//constructor displacement offset
-	struct TypeDescriptor				*p_type_descriptor;		//TypeDescriptor of the complete class
-	struct RTTIClassHierarchyDescriptor	*p_class_descriptor;	//describes inheritance hierarchy
+	unsigned long                       signature;              //always zero ?
+	unsigned long                       offset;                 //offset of this vtable in the complete class
+	unsigned long                       cd_offset;              //constructor displacement offset
+	struct TypeDescriptor               *p_type_descriptor;     //TypeDescriptor of the complete class
+	struct RTTIClassHierarchyDescriptor *p_class_descriptor;    //describes inheritance hierarchy
 };
 
 struct RTTIClassHierarchyDescriptor
 {
-	unsigned long						signature;				//always zero?
-	unsigned long						attributes;				//bit 0 set = multiple inheritance, bit 1 set = virtual inheritance
-	unsigned long						num_base_classes;		//number of classes in pBaseClassArray
-	struct RTTIBaseClassArray			*p_base_class_array;
+	unsigned long                       signature;              //always zero?
+	unsigned long                       attributes;             //bit 0 set = multiple inheritance, bit 1 set = virtual inheritance
+	unsigned long                       num_base_classes;       //number of classes in pBaseClassArray
+	struct RTTIBaseClassArray           *p_base_class_array;
 };
 
 struct RTTIBaseClassArray 
 {
-	struct RTTIBaseClassDescriptor		*arrayOfBaseClassDescriptors[];
+	struct RTTIBaseClassDescriptor      *arrayOfBaseClassDescriptors[];
 };
 
 #pragma warning( pop )
 
 struct RTTIBaseClassDescriptor
 {
-	struct TypeDescriptor				*p_type_descriptor;		//type descriptor of the class
-	unsigned long						numContainedBases;		//number of nested classes following in the Base Class Array
-	struct PMD							where;					//pointer-to-member displacement info
-	unsigned long						attributes;				//flags, usually 0
+	struct TypeDescriptor               *p_type_descriptor;     //type descriptor of the class
+	unsigned long                       numContainedBases;      //number of nested classes following in the Base Class Array
+	struct PMD                          where;                  //pointer-to-member displacement info
+	unsigned long                       attributes;             //flags, usually 0
 };
 
 const bool RTTI::find_cache( const uint32_t address )
