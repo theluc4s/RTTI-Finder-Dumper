@@ -4,6 +4,8 @@
 
 void MemoryMgr::get_processes()
 {
+	m_selected_process = -1;
+
 	close_old_handle();
 
 	const auto h_snapshot{ CreateToolhelp32Snapshot( TH32CS_SNAPPROCESS, 0 ) };
@@ -23,9 +25,9 @@ void MemoryMgr::get_processes()
 	CloseHandle( h_snapshot );
 }
 
-bool MemoryMgr::get_modules( int index )
+bool MemoryMgr::get_modules( const int current_process )
 {
-	const auto h_snapshot{ CreateToolhelp32Snapshot( TH32CS_SNAPMODULE, m_process_info.at( index ).m_pid ) };
+	const auto h_snapshot{ CreateToolhelp32Snapshot( TH32CS_SNAPMODULE, m_process_info.at( current_process ).m_pid ) };
 
 	MODULEENTRY32 module{ sizeof module };
 
@@ -44,11 +46,11 @@ bool MemoryMgr::get_modules( int index )
 	return !m_modules.empty();
 }
 
-bool MemoryMgr::open_handle( int index )
+bool MemoryMgr::open_handle( const int current_process )
 {
 	close_old_handle();
 
-	return ( m_process_info.at( index ).m_handle = OpenProcess( PROCESS_ALL_ACCESS, PROCESS_VM_READ, m_process_info.at( index ).m_pid ) ) != 0;
+	return ( m_process_info.at( current_process ).m_handle = OpenProcess( PROCESS_ALL_ACCESS, PROCESS_VM_READ, m_process_info.at( current_process ).m_pid ) ) != 0;
 }
 
 void MemoryMgr::close_old_handle()
@@ -59,7 +61,7 @@ void MemoryMgr::close_old_handle()
 	}
 }
 
-bool MemoryMgr::maybe_valid( uint32_t address )
+const bool MemoryMgr::maybe_valid( const uint32_t address ) const
 {
 	return ( address >= 0x10000 && address <= 0x7f00'0000 );
 }

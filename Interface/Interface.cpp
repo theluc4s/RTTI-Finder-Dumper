@@ -1,26 +1,30 @@
 #include "Interface.hpp"
 #include "ImHelper.hpp"
 
-#include <iostream>
+#include <thread>	//std::thread
 
 void FinderInterface::show_menu_items()
 {
-	if( ImGui::Button( "Select Process###menu_item_process" ) )
+	bool focus_filter{ false };
+
+	if( ImGui::Button( "Select Process" ) )
 	{
 		ImGui::OpenPopup( "###process" );
+
+		clear();
+
 		get_processes();
+
+		focus_filter = true;
 	}
 
 	if( ImGui::BeginPopupModal( "Select Process###process", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove ) )
 	{
-		if( m_selected_process >= 0 )
-		{
-			ImGui::Text( "Current: %s", m_process_info.at( m_selected_process ).m_name.data() );
-			ImGui::Text( "PID:     %d", m_process_info.at( m_selected_process ).m_pid );
-		}
-
 		ImGui::SetNextItemWidth( 400.f );
-		ImGui::InputText( "###filter_process", m_filter_process, sizeof m_filter_process );
+		m_filter_process.Draw( "###filter_process" );
+
+		if( focus_filter )
+			ImGui::SetKeyboardFocusHere( -1 );
 
 		if( ImGui::BeginChild( "###process_list", { 400.f, 300.f }, true ) )
 		{
@@ -29,23 +33,20 @@ void FinderInterface::show_menu_items()
 			{
 				for( size_t index{ 0 }; index < m_process_info.size(); ++index )
 				{
-					if( m_process_info.at( index ).m_name.find( m_filter_process ) == std::string::npos )
+					if( !m_filter_process.PassFilter( m_process_info.at( index ).m_name.data() ) )
 						continue;
 
-					if( ImGui::Selectable( m_process_info.at( index ).m_name.data(), m_tmp_selected_proc == index, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick ) )
-						m_tmp_selected_proc = index;
+					if( ImGui::Selectable( m_process_info.at( index ).m_name.data(), m_current_proc == index, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick ) )
+						m_current_proc = index;
 
 					if( ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked( ImGuiMouseButton_Left ) )
 					{
 						if( open_handle( index ) )
 						{
 							m_selected_process	= index;
-							m_selected_module	= 0;
 
-							if( !get_modules( index ) || !init() )
+							if( !get_modules( m_selected_process ) )
 							{
-								ImGui::OpenPopup( "###invalid_section" );
-								clear();
 								break;
 							}
 
@@ -72,20 +73,6 @@ void FinderInterface::show_menu_items()
 					ImGui::PushStyleColor( ImGuiCol_Text, { 1.f, 0.f, 0.f, 1.f } );
 
 					ImGui::TextWrapped( "OpenProcess has failed! You may not have sufficient privilege to open a PROCESS_ALL_ACCESS handle." );
-
-					ImGui::PopStyleColor();
-
-					if( ImGui::Button( "Close" ) )
-						ImGui::CloseCurrentPopup();
-					ImGui::EndPopup();
-				}
-
-				ImGui::SetNextWindowSize( { 470.f, 85.f } );
-				if( ImGui::BeginPopupModal( "Invalid Section###invalid_section", 0, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize ) )
-				{
-					ImGui::PushStyleColor( ImGuiCol_Text, { 1.f, 0.f, 0.f, 1.f } );
-
-					ImGui::TextWrapped( "It was not possible to obtain the address, size and name of the section .text!" );
 
 					ImGui::PopStyleColor();
 
@@ -119,8 +106,8 @@ void FinderInterface::show_menu_bar()
 			show_menu_items();
 			ImGui::EndMenu();
 		}
-		ImGui::EndMainMenuBar();
 	}
+	ImGui::EndMainMenuBar();
 }
 
 void FinderInterface::show_layout( const std::string &title, const ImVec2 &wnd_size, NMD_X86Instruction *instruction )
@@ -130,11 +117,24 @@ void FinderInterface::show_layout( const std::string &title, const ImVec2 &wnd_s
 
 	ImGui::Begin( title.data(), 0, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize );
 	{
+		if( m_selected_process == -1 )
+		{
+			ImGui::End();
+			return;
+		}
+
 		if( ImGui::BeginChild( "###layout", {}, true ) )
 		{
-			if( !m_modules.empty() )
+			if( m_selected_process >= 0 )
 			{
-				ImGui::Text( "Current:      " ); ImGui::SameLine();
+				ImGui::Text( "Process:      " );
+				ImGui::SameLine();
+				ImGui::TextColored( { 0.0f, 0.5f, 1.0f, 1.0f }, "%s", m_process_info.at( m_selected_process ).m_name.data() );
+			}
+
+			if( !m_modules.empty() && m_selected_module != -1 )
+			{
+				ImGui::Text( "Module:       " ); ImGui::SameLine();
 				ImGui::TextColored( { 0.0f, 0.5f, 1.0f, 1.0f }, "%s", m_modules.at( m_selected_module ).m_name.data() );
 				ImGui::Text( "Base Address: " ); ImGui::SameLine();
 				ImGui::TextColored( { 0.0f, 0.5f, 1.0f, 1.0f }, "%x", m_modules.at( m_selected_module ).m_base_address );
@@ -144,18 +144,26 @@ void FinderInterface::show_layout( const std::string &title, const ImVec2 &wnd_s
 				ImGui::Separator();
 			}
 
-			if( ImGui::BeginChild( "###module_list", { 470.f, 540.f }, true ) )
+			ImGui::SetNextItemWidth( 470.f );
+			m_filter_module.Draw( "###filter_modules" );
+
+			if( ImGui::Button( "Refresh###refresh_modules", { 470.f, 0.f } ) )
+				get_modules( m_selected_process );
+
+			ImGui::Separator();
+
+			if( ImGui::BeginChild( "###module_list", { 470.f, 0.f }, true ) )
 			{
 				ImHelper::BeginColumn( { "Name", "Base Address", "Base Size" }, "###col_modules" );
 				ImHelper::ColumnWidth( { 250, 100, 100 } );
 				{
 					for( size_t index{ 0 }; index < m_modules.size(); ++index )
 					{
-						if( m_modules.at( index ).m_name.find( m_filter_module ) == std::string::npos )
+						if( !m_filter_module.PassFilter( m_modules.at( index ).m_name.data() ) )
 							continue;
 
-						if( ImGui::Selectable( m_modules.at( index ).m_name.data(), m_tmp_selected_mod == index, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick ) )
-							m_tmp_selected_mod = index;
+						if( ImGui::Selectable( m_modules.at( index ).m_name.data(), m_current_mod == index, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowDoubleClick ) )
+							m_current_mod = index;
 
 						if( ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked( ImGuiMouseButton_Left ) )
 						{
@@ -163,6 +171,8 @@ void FinderInterface::show_layout( const std::string &title, const ImVec2 &wnd_s
 
 							if( !init() )
 							{
+								m_selected_module = -1;
+
 								ImGui::OpenPopup( "###invalid_section" );
 								break;
 							}
@@ -175,7 +185,21 @@ void FinderInterface::show_layout( const std::string &title, const ImVec2 &wnd_s
 
 						ImGui::Text( "%x", m_modules.at( index ).m_size );
 						ImGui::NextColumn();
+					}
 
+					ImGui::SetNextWindowSize( { 400.f, 85.f } );
+					if( ImGui::BeginPopupModal( "Invalid Section###invalid_section", 0, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize ) )
+					{
+						ImGui::PushStyleColor( ImGuiCol_Text, { 1.f, 0.f, 0.f, 1.f } );
+
+						ImGui::TextWrapped( "It was not possible to obtain the address, size or name of the section .text!" );
+
+						ImGui::PopStyleColor();
+
+						if( ImGui::Button( "Close" ) )
+							ImGui::CloseCurrentPopup();
+
+						ImGui::EndPopup();
 					}
 				}
 				ImHelper::EndColumn();
@@ -186,7 +210,7 @@ void FinderInterface::show_layout( const std::string &title, const ImVec2 &wnd_s
 
 			ImGui::BeginGroup();
 			{
-				ImGui::BeginChild( "###item_view", { 0, 540.f } );
+				ImGui::BeginChild( "###item_view", {} );
 				{
 					if( !m_section_text.m_name.empty() )
 					{
@@ -214,7 +238,7 @@ void FinderInterface::show_layout( const std::string &title, const ImVec2 &wnd_s
 						if( ImGui::BeginPopupModal( "Saved successfully###saved_successfully", 0, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize ) )
 						{
 							ImGui::TextColored( { 0.f, 1.f, 0.f, 1.f }, "Saved successfully!" );
-							ImGui::TextWrapped( "Path: %s", m_path.data() );
+							ImGui::TextWrapped( "File name: %s", m_path.data() );
 
 							if( ImGui::Button( "Close", { 400.f, 0.f } ) )
 								ImGui::CloseCurrentPopup();
@@ -227,85 +251,94 @@ void FinderInterface::show_layout( const std::string &title, const ImVec2 &wnd_s
 					{
 						if( ImGui::BeginTabItem( "Basic###basic" ) )
 						{
-							ImHelper::BeginColumn( { "Pointer", "Name" }, "###col_basics" );
-							ImHelper::ColumnWidth( { 90, 1000 } );
+							ImGui::SetNextWindowContentSize( { 1300.f, 0.f } );
+							if( ImGui::BeginChild( "###basic_child", {}, false, ImGuiWindowFlags_HorizontalScrollbar ) )
 							{
-								for( size_t index{ 0 }; m_finished_scan && index < m_pointer.size(); ++index )
+								ImHelper::BeginColumn( { "Pointer", "Name" }, "###col_basics" );
 								{
-									ImGui::TextColored( { 0.0f, 0.5f, 1.0f, 1.0f }, "%x", m_pointer.at( index ) );
-									ImGui::NextColumn();
+									for( size_t index{ 0 }; !m_scanning && index < m_pointer.size(); ++index )
+									{
+										ImGui::TextColored( { 0.0f, 0.5f, 1.0f, 1.0f }, "%x", m_pointer.at( index ) );
+										ImGui::NextColumn();
 
-									ImGui::TextColored( { 1.0f, 0.5f, 0.0f, 1.0f }, "%s", m_name.at( index ).data() );
-									ImGui::NextColumn();
+										ImGui::TextColored( { 1.0f, 0.5f, 0.0f, 1.0f }, "%s", m_name.at( index ).data() );
+										ImGui::NextColumn();
+									}
 								}
-							}
-							ImHelper::EndColumn();
+								ImHelper::EndColumn();
 
+								ImGui::EndChild();
+							}
 							ImGui::EndTabItem();
 						}
 						if( ImGui::BeginTabItem( "Details###details" ) )
 						{
-							ImHelper::BeginColumn( { "Pointer", "Name", "Pointer to instances", "References" }, "###col_details" );
-							ImHelper::ColumnWidth( { 90, 800, 200, 200 } );
+							ImGui::SetNextWindowContentSize( { 1300.f, 0.f } );
+							if( ImGui::BeginChild( "###details_child", {}, false, ImGuiWindowFlags_HorizontalScrollbar ) )
 							{
-								static std::string refs_buf{};
-								static std::string ptr_inst_buf{};
-
-								for( size_t index{ 0 }; m_finished_scan && index < m_pointer.size(); ++index )
+								ImHelper::BeginColumn( { "Pointer", "Name", "Pointer to instances", "References" }, "###col_details" );
 								{
-									ImGui::TextColored( { 0.0f, 0.5f, 1.0f, 1.0f }, "%x", m_pointer.at( index ) );
-									ImGui::NextColumn();
+									static std::string refs_buf{};
+									static std::string ptr_inst_buf{};
 
-									ImGui::TextColored( { 1.0f, 0.5f, 0.0f, 1.0f }, "%s", m_name.at( index ).data() );
-									ImGui::NextColumn();
-
-									ImGui::TextColored( { 0.0f, 0.5f, 1.0f, 1.0f }, "%d instances", m_pointer_instance.at( index ).size() );
-
-									if( ImGui::IsItemHovered() )
-										ImGui::SetMouseCursor( ImGuiMouseCursor_Hand );
-
-									ptr_inst_buf = "###popup_ptr_inst" + std::to_string( index );
-
-									if( ImGui::BeginPopupContextItem( ptr_inst_buf.data(), ImGuiMouseButton_Left ) )
+									for( size_t index{ 0 }; !m_scanning && index < m_pointer.size(); ++index )
 									{
-										for( size_t pos{ 0 }; pos < m_pointer_instance.at( index ).size(); ++pos )
+										ImGui::TextColored( { 0.0f, 0.5f, 1.0f, 1.0f }, "%x", m_pointer.at( index ) );
+										ImGui::NextColumn();
+
+										ImGui::TextColored( { 1.0f, 0.5f, 0.0f, 1.0f }, "%s", m_name.at( index ).data() );
+										ImGui::NextColumn();
+
+										ImGui::TextColored( { 0.0f, 0.5f, 1.0f, 1.0f }, "%d instances", m_pointer_instance.at( index ).size() );
+
+										if( ImGui::IsItemHovered() )
+											ImGui::SetMouseCursor( ImGuiMouseCursor_Hand );
+
+										ptr_inst_buf = "###popup_ptr_inst" + std::to_string( index );
+
+										if( ImGui::BeginPopupContextItem( ptr_inst_buf.data(), ImGuiMouseButton_Left ) )
 										{
-											ImGui::InputScalar( ( ptr_inst_buf + std::to_string( pos ) ).data(), ImGuiDataType_U32, &m_pointer_instance.at( index ).at( pos ), 0, 0, "%x", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_ReadOnly );
+											for( size_t pos{ 0 }; pos < m_pointer_instance.at( index ).size(); ++pos )
+											{
+												ImGui::InputScalar( ( ptr_inst_buf + std::to_string( pos ) ).data(), ImGuiDataType_U32, &m_pointer_instance.at( index ).at( pos ), 0, 0, "%x", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_ReadOnly );
+											}
+
+											ImGui::EndPopup();
 										}
 
-										ImGui::EndPopup();
-									}
+										ImGui::NextColumn();
 
-									ImGui::NextColumn();
+										ImGui::PushStyleColor( ImGuiCol_Text, { 0.0f, 0.5f, 1.0f, 1.0f } );
+										ImGui::Text( "%d references", m_reference.at( index ).size() );
+										ImGui::PopStyleColor();
 
-									ImGui::PushStyleColor( ImGuiCol_Text, { 0.0f, 0.5f, 1.0f, 1.0f } );
-									ImGui::Text( "%d references", m_reference.at( index ).size() );
-									ImGui::PopStyleColor();
+										if( ImGui::IsItemHovered() )
+											ImGui::SetMouseCursor( ImGuiMouseCursor_Hand );
 
-									if( ImGui::IsItemHovered() )
-										ImGui::SetMouseCursor( ImGuiMouseCursor_Hand );
+										refs_buf = "###popup_refs" + std::to_string( index );
 
-									refs_buf = "###popup_refs" + std::to_string( index );
-
-									if( ImGui::BeginPopupContextItem( refs_buf.data(), ImGuiMouseButton_Left ) )
-									{
-										for( size_t pos{ 0 }; pos < m_reference.at( index ).size(); ++pos )
+										if( ImGui::BeginPopupContextItem( refs_buf.data(), ImGuiMouseButton_Left ) )
 										{
-											ImGui::SetNextItemWidth( 70.f );
-											ImGui::InputScalar( ( ptr_inst_buf + "#" + std::to_string( pos ) ).data(), ImGuiDataType_U32, &m_reference.at( index ).at( pos ), 0, 0, "%x", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_ReadOnly );
+											for( size_t pos{ 0 }; pos < m_reference.at( index ).size(); ++pos )
+											{
+												ImGui::SetNextItemWidth( 70.f );
+												ImGui::InputScalar( ( ptr_inst_buf + "#" + std::to_string( pos ) ).data(), ImGuiDataType_U32, &m_reference.at( index ).at( pos ), 0, 0, "%x", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_ReadOnly );
 
-											ImGui::SameLine();
+												ImGui::SameLine();
 
-											ImGui::InputText( ( ptr_inst_buf + "##" + std::to_string( pos ) ).data(), m_assembly_inf.at( index ).at( pos ).data(), 255, ImGuiInputTextFlags_ReadOnly );
+												ImGui::InputText( ( ptr_inst_buf + "##" + std::to_string( pos ) ).data(), m_assembly_inf.at( index ).at( pos ).data(), 255, ImGuiInputTextFlags_ReadOnly );
+											}
+
+											ImGui::EndPopup();
 										}
 
-										ImGui::EndPopup();
+										ImGui::NextColumn();
 									}
-
-									ImGui::NextColumn();
 								}
+								ImHelper::EndColumn();
+
+								ImGui::EndChild();
 							}
-							ImHelper::EndColumn();
 							ImGui::EndTabItem();
 						}
 						ImGui::EndTabBar();
@@ -314,16 +347,6 @@ void FinderInterface::show_layout( const std::string &title, const ImVec2 &wnd_s
 				ImGui::EndChild();
 			}
 			ImGui::EndGroup();
-
-			ImGui::NewLine();
-
-			ImGui::SetNextItemWidth( 470.f );
-			ImGui::InputText( "###filter_modules", m_filter_module, sizeof m_filter_module );
-
-			if( ImGui::Button( "Refresh###refresh_mod", { 470.f, 0.f } ) )
-				get_modules( m_selected_process );
-
-			ImGui::Separator();
 
 			ImGui::EndChild();
 		}
@@ -336,10 +359,11 @@ void FinderInterface::show_scan( NMD_X86Instruction *instruction )
 	ImGui::SetNextWindowSize( { 400.f, 0.f } );
 	if( ImGui::BeginPopupModal( "Start scan section###start_scan", 0, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize ) )
 	{
-		if( ImGui::Button( "Start", { 385.f, 0.f } ) && m_finished_scan )
+		if( ImGui::Button( "Start", { 385.f, 0.f } ) && !m_scanning )
 		{
 			if( m_process_info.at( m_selected_process ).m_handle )
 			{
+				m_scanning = true;
 				std::thread thread{ &FinderInterface::start_scan, this, instruction };
 				thread.detach();
 			}
@@ -358,11 +382,11 @@ void FinderInterface::show_scan( NMD_X86Instruction *instruction )
 			ImGui::EndPopup();
 		}
 
-		if( ImGui::Button( "Close", { 385.f, 0.f } ) && m_finished_scan )
+		if( ImGui::Button( "Close", { 385.f, 0.f } ) && !m_scanning )
 			ImGui::CloseCurrentPopup();
 
-		if( !m_finished_scan )
-			ImGui::TextColored( { 0.f, 1.f, 0.f, 1.f }, "Scanning..." );
+		if( m_scanning )
+			ImGui::TextColored( { 0.f, 1.f, 0.f, 1.f }, "Scanning section .text..." );
 
 		ImGui::EndPopup();
 	}
@@ -375,18 +399,16 @@ bool FinderInterface::init()
 
 void FinderInterface::start_scan( NMD_X86Instruction *instruction )
 {
-	m_finished_scan = false;
-
-	m_pointer.clear();
-	m_name.clear();
-	m_pointer_instance.clear();
-	m_reference.clear();
-	m_assembly_inf.clear();
+	m_pointer			.clear();
+	m_name				.clear();
+	m_pointer_instance	.clear();
+	m_reference			.clear();
+	m_assembly_inf		.clear();
 
 	if( !read_buffer() )
 	{
 		ImGui::OpenPopup( "###failed_read_buffer" );
-		m_finished_scan = true;
+		m_scanning = false;
 		return;
 	}
 
@@ -407,17 +429,17 @@ void FinderInterface::start_scan( NMD_X86Instruction *instruction )
 			for( size_t index{ 0 }; index < instruction->numOperands; ++index )
 			{
 				if( ( instruction->operands[ index ].type == NMD_X86_OPERAND_TYPE_MEMORY &&
-					instruction->operands[ index ].fields.mem.base == NMD_X86_REG_NONE &&
-					instruction->operands[ index ].fields.mem.index == NMD_X86_REG_NONE ) ||
+					  instruction->operands[ index ].fields.mem.base == NMD_X86_REG_NONE &&
+					  instruction->operands[ index ].fields.mem.index == NMD_X86_REG_NONE ) ||
 					( instruction->id == NMD_X86_INSTRUCTION_PUSH &&
-						instruction->immMask != NMD_X86_IMM_NONE &&
-						maybe_valid( instruction->operands[ 0 ].fields.imm ) ) )
+					  instruction->immMask != NMD_X86_IMM_NONE &&
+					  maybe_valid( instruction->operands[ 0 ].fields.imm ) ) )
 				{
-					uint32_t pointer{ static_cast< uint32_t >( ( instruction->id == NMD_X86_INSTRUCTION_PUSH ? instruction->operands[ 0 ].fields.imm : instruction->operands[ index ].fields.mem.disp ) ) };
+					uint32_t pointer		{ static_cast< uint32_t >( ( instruction->id == NMD_X86_INSTRUCTION_PUSH ? instruction->operands[ 0 ].fields.imm : instruction->operands[ index ].fields.mem.disp ) ) };
 
-					uint32_t pointer_inst{ pointer };
+					uint32_t pointer_inst	{ pointer };
 
-					uint32_t ptr_backup{ pointer };
+					uint32_t ptr_backup		{ pointer };
 
 					std::string rtti{};
 					if( maybe_valid( pointer ) )
@@ -449,10 +471,10 @@ void FinderInterface::start_scan( NMD_X86Instruction *instruction )
 
 					if( !rtti.empty() )
 					{
-						char temp_insn_str[ 256 ]{ 0 };
-						nmd_x86_format_instruction( instruction, temp_insn_str, address, NMD_X86_FORMAT_FLAGS_0X_PREFIX | NMD_X86_FORMAT_FLAGS_HEX );
+						char insn_str[ 256 ]{ 0 };
+						nmd_x86_format_instruction( instruction, insn_str, address, NMD_X86_FORMAT_FLAGS_0X_PREFIX | NMD_X86_FORMAT_FLAGS_HEX );
 
-						add( { pointer, pointer_inst, rtti, m_section_text.m_section_address + offset, temp_insn_str } );
+						add( { pointer, pointer_inst, rtti, m_section_text.m_section_address + offset, insn_str } );
 					}
 				}
 			}
@@ -461,7 +483,7 @@ void FinderInterface::start_scan( NMD_X86Instruction *instruction )
 		offset += instruction->length;
 	}
 
-	m_finished_scan = true;
+	m_scanning = false;
 }
 
 void FinderInterface::clear()
@@ -478,6 +500,8 @@ void FinderInterface::clear()
 
 	m_section_text		.clear();
 	m_buffer			.clear();
+
+	m_rtti_cache		.clear();
 }
 
 void FinderInterface::show( const std::string &title, const ImVec2 &wnd_size, NMD_X86Instruction *instruction )

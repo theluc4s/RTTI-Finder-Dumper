@@ -6,12 +6,16 @@
 
 #include "Interface/Interface.hpp"
 
-#include <iostream>	//std::cout
 #include <memory>	//std::unique
 
-int main()
+int CALLBACK WinMain(
+	_In_ HINSTANCE,
+	_In_opt_ HINSTANCE,
+	_In_ LPSTR,
+	_In_ int
+)
 {
-	auto wnd{ std::make_unique< Implementation >( "Class Finder" ) };
+	auto wnd{ std::make_unique< Implementation >( "Class Finder Dumper by Lucas" ) };
 	{
 		wnd->set_class_name( "Class_Finder" );
 		wnd->set_size( { 800, 600 } );
@@ -42,6 +46,4 @@ int main()
 
 		wnd->set_background_color( 110, 145, 190 );
 	}
-
-	system( "pause" );
 }

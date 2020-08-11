@@ -1,7 +1,8 @@
 #include "rtti.hpp"
 
-#include <memory>
 #include <DbgHelp.h>
+#include <memory>
+
 #pragma comment( lib, "Dbghelp.lib" )
 
 /*
@@ -10,6 +11,9 @@
 - http://www.openrce.org/articles/full_view/23
 
 */
+
+#pragma warning( push )
+#pragma warning( disable : 4200 )
 
 struct TypeDescriptor
 {
@@ -47,6 +51,8 @@ struct RTTIBaseClassArray
 	struct RTTIBaseClassDescriptor		*arrayOfBaseClassDescriptors[];
 };
 
+#pragma warning( pop )
+
 struct RTTIBaseClassDescriptor
 {
 	struct TypeDescriptor				*p_type_descriptor;		//type descriptor of the class
@@ -55,14 +61,14 @@ struct RTTIBaseClassDescriptor
 	unsigned long						attributes;				//flags, usually 0
 };
 
-bool RTTI::find_cache( uint32_t address )
+const bool RTTI::find_cache( const uint32_t address )
 {
 	const auto cache{ this->m_rtti_cache.find( address ) };
 
 	return ( cache != this->m_rtti_cache.end() ? this->m_rtti = cache->second, true : false );
 }
 
-std::string RTTI::undecorate_symbol_name( std::string name )
+std::string RTTI::undecorate_symbol_name( const std::string name )
 {
 	auto string{ std::make_unique< char[] >( name.size() + 1 ) };
 
@@ -71,29 +77,29 @@ std::string RTTI::undecorate_symbol_name( std::string name )
 	return string.get();
 }
 
-std::string RTTI::read_rtti32( uint32_t object_locator )
+std::string RTTI::read_rtti32( const uint32_t object_locator )
 {
-	const RTTICompleteObjectLocator		*col{ reinterpret_cast< RTTICompleteObjectLocator * >( object_locator ) };
-	const RTTIClassHierarchyDescriptor	*chd{ ( RTTIClassHierarchyDescriptor * )read_remote< uint32_t >( reinterpret_cast< uint32_t >( &col->p_class_descriptor ) ) };
+	const auto *col{ reinterpret_cast< RTTICompleteObjectLocator * >( object_locator ) };
+	const auto *chd{ reinterpret_cast< RTTIClassHierarchyDescriptor * >( read_remote< uint32_t >( reinterpret_cast< uint32_t >( &col->p_class_descriptor ) ) ) };
 
 	if( maybe_valid( reinterpret_cast< uint32_t >( &chd ) ) )
 	{
-		uint32_t num_base_classes{ read_remote< uint32_t >( reinterpret_cast< uint32_t >( &chd->num_base_classes ) ) };
+		const auto num_base_classes{ read_remote< uint32_t >( reinterpret_cast< uint32_t >( &chd->num_base_classes ) ) };
 		if( num_base_classes > 0 && num_base_classes < 25 )
 		{
-			const RTTIBaseClassArray *bca{ ( RTTIBaseClassArray * )read_remote< uint32_t >( reinterpret_cast< uint32_t >( &chd->p_base_class_array ) ) };
+			const auto *bca{ reinterpret_cast< RTTIBaseClassArray * >( read_remote< uint32_t >( reinterpret_cast< uint32_t >( &chd->p_base_class_array ) ) ) };
 			if( maybe_valid( reinterpret_cast< uint32_t >( &bca ) ) )
 			{
 				std::string rtti{};
-				for( int index{ 0 }; index < num_base_classes; ++index )
+				for( uint32_t index{ 0 }; index < num_base_classes; ++index )
 				{
-					const RTTIBaseClassDescriptor *bcd{ ( RTTIBaseClassDescriptor * )read_remote< uint32_t >( reinterpret_cast< uint32_t >( bca ) + ( 0x4 * index ) ) };
+					const auto *bcd{ reinterpret_cast< RTTIBaseClassDescriptor * >( read_remote< uint32_t >( reinterpret_cast< uint32_t >( bca ) + ( 0x4 * index ) ) ) };
 					if( maybe_valid( reinterpret_cast< uint32_t >( bcd ) ) )
 					{
-						const TypeDescriptor *td{ ( TypeDescriptor * )read_remote< uint32_t >( reinterpret_cast< uint32_t >( &bcd->p_type_descriptor ) ) };
+						const auto *td{ reinterpret_cast< TypeDescriptor * >( read_remote< uint32_t >( reinterpret_cast< uint32_t >( &bcd->p_type_descriptor ) ) ) };
 						if( maybe_valid( reinterpret_cast< uint32_t >( td ) ) )
 						{
-							std::string name{ read_remote_str( reinterpret_cast< uint32_t >( &td->name ) + 0x4 ) };	//alignment
+							auto name{ read_remote_str( reinterpret_cast< uint32_t >( &td->name ) + 0x4 ) }; //alignment
 
 							if( name.empty() )
 								continue;
@@ -122,13 +128,13 @@ std::string RTTI::read_rtti32( uint32_t object_locator )
 	return {};
 }
 
-std::string RTTI::read_rtti( uint32_t vftable )
+std::string RTTI::read_rtti( const uint32_t vftable )
 {
 	if( maybe_valid( vftable ) )
 	{
 		if( !find_cache( vftable ) )
 		{
-			uint32_t object_locator{ read_remote< uint32_t >( vftable - 0x4 ) };
+			const auto object_locator{ read_remote< uint32_t >( vftable - 0x4 ) };
 			if( maybe_valid( object_locator ) )
 			{
 				this->m_rtti = read_rtti32( object_locator );
