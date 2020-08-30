@@ -5,6 +5,7 @@
 
 ## Design goals
 A tool to facilitate the collection and visualization of the RTTI resource.
+- Supports x86 only.
 
 ###### Runtime
 Allow runtime collection of pointers with the available rtti feature.
